@@ -46,6 +46,21 @@ object PhotoRepository {
 
     }
 
+    fun find(photoId: Int): PhotoItem? = photoItems.value!!.data.find { it.id == photoId }
+
+    suspend fun update(photo: PhotoItem) {
+        val response = photoItems.value!!
+
+        val copy = response.data.toMutableList()
+        val ind = response.data.indexOfFirst { it.id == photo.id }
+        if (ind == -1) return
+        copy[ind] = photo
+
+        photoDB.update(photo)
+
+        photoItems.value = PhotoResponse(response.status, copy, response.message)
+    }
+
     private suspend fun loadPhotosFromDB(sol: Int, page: Int): PhotoResponse<List<PhotoItem>> {
         return PhotoResponse.success(
             "Loaded from DB (sol $sol, page $page)",
@@ -62,8 +77,7 @@ object PhotoRepository {
         return result
     }
 
-    private fun photoExists(photoId: Int): Boolean =
-        photoItems.value!!.data.find { it.id == photoId } != null
+    private fun photoExists(photoId: Int): Boolean = find(photoId) != null
 
     private suspend fun addPhotos(photoList: List<PhotoItem>?) {
         if (photoList.isNullOrEmpty()) return

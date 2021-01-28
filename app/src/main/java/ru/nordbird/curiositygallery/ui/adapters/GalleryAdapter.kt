@@ -59,6 +59,7 @@ class GalleryAdapter(val longClickListener: (PhotoItem) -> Boolean) :
                     .into(binding.ivPhoto)
             }
 
+            binding.tvId.text = "ID: ${item.id}"
             binding.tvTitle.text = item.earthDate
             itemView.setOnLongClickListener { longClickListener.invoke(item) }
         }

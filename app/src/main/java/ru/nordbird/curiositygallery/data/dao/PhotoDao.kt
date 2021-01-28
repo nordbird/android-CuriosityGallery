@@ -1,6 +1,5 @@
 package ru.nordbird.curiositygallery.data.dao
 
-import androidx.lifecycle.LiveData
 import androidx.room.*
 import ru.nordbird.curiositygallery.data.model.PhotoItem
 
@@ -21,4 +20,7 @@ interface PhotoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(photos: List<PhotoItem>)
+
+    @Update
+    suspend fun update(photo: PhotoItem)
 }

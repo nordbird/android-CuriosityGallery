@@ -38,7 +38,13 @@ class GalleryFragment : Fragment() {
         _binding = FragmentGalleryBinding.inflate(layoutInflater, container, false)
 
         galleryAdapter = GalleryAdapter {
-            Snackbar.make(binding.rvGallery, "Click on ${it.id}", Snackbar.LENGTH_LONG).show()
+            val photoId = it.id
+
+            viewModel.blockPhoto(photoId)
+            Snackbar.make(binding.rvGallery, "Photo ${it.id} is hidden", Snackbar.LENGTH_LONG)
+                .setAction("Cancel") {
+                    viewModel.unblockPhoto(photoId)
+                }.show()
             return@GalleryAdapter true
         }
 
