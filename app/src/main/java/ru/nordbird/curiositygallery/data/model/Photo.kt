@@ -1,7 +1,6 @@
 package ru.nordbird.curiositygallery.data.model
 
 import com.squareup.moshi.Json
-import java.util.*
 
 data class Photo(
     @Json(name = "id")
@@ -11,10 +10,14 @@ data class Photo(
     val imgSrc: String = "",
 
     @Json(name = "earth_date")
-    val earthDate: String = ""
+    val earthDate: String = "",
+
+    @Json(name = "sol")
+    val sol: Int = 0,
+
 ) {
 
-    fun toPhotoItem(): PhotoItem {
-        return PhotoItem(id, imgSrc, earthDate)
+    fun toPhotoItem(page: Int): PhotoItem {
+        return PhotoItem(id, imgSrc, earthDate, sol, page, false)
     }
 }

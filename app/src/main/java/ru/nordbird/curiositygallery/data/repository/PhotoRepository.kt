@@ -1,59 +1,74 @@
 package ru.nordbird.curiositygallery.data.repository
 
-import androidx.lifecycle.MutableLiveData
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.Call
-import okhttp3.Response
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ru.nordbird.curiositygallery.data.api.WebService
+import ru.nordbird.curiositygallery.data.dao.PhotoDaoImpl
 import ru.nordbird.curiositygallery.data.model.PhotoItem
-import ru.nordbird.curiositygallery.data.model.PhotoList
 import ru.nordbird.curiositygallery.extensions.mutableLiveData
-import java.io.IOException
-import javax.security.auth.callback.Callback
+import ru.nordbird.curiositygallery.utils.PhotoResponse
+import ru.nordbird.curiositygallery.utils.Status
 
 object PhotoRepository {
+    private val photoDB = PhotoDaoImpl.getDao()
+    private val photoWeb = WebService
 
-    private val photos: MutableLiveData<List<PhotoItem>> = mutableLiveData(listOf())
+    private val photoItems = mutableLiveData(PhotoResponse.loading("", listOf<PhotoItem>()))
+    private var sol = 0
+    private var page = 0
+    private var loadingError = false
 
-    fun loadPhotos(sol: Int, page: Int): MutableLiveData<List<PhotoItem>> {
-        WebService.getPhotos(sol, page, object : Callback, okhttp3.Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                addPhotos(listOf())
+    fun getPhotos() = photoItems
+
+    suspend fun loadNewPhotos() {
+        if (!loadingError) page++
+
+        withContext(Dispatchers.IO) {
+            var result = loadPhotosFromDB(sol, page)
+            if (result.data.isNullOrEmpty()) result = loadPhotosFromWeb(sol, page)
+
+            loadingError = result.status == Status.ERROR
+
+            if (result.data.isNullOrEmpty() && !loadingError) {
+                sol++
+                page = 0
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful && response.body != null) {
-                    val moshi = Moshi.Builder()
-                        .addLast(KotlinJsonAdapterFactory())
-                        .build()
-                    val adapter = moshi.adapter(PhotoList::class.java).nullSafe()
+            val allPhotos = photoItems.value!!.data.toMutableList()
 
-                    try {
-                        adapter.fromJson(response.body!!.string())?.let { list ->
-                            addPhotos(list.photos.map { it.toPhotoItem() })
-                        }
-                    } catch (e: IOException) {
-                        addPhotos(listOf())
-                    }
-                } else {
-                    addPhotos(listOf())
-                }
+            if (!result.data.isNullOrEmpty()) {
+                val newPhotos = result.data
+                allPhotos.addAll(newPhotos.filter { !photoExists(it.id) })
             }
-        })
 
-        return photos
+            photoItems.postValue(PhotoResponse(result.status, allPhotos, result.message))
+        }
+
     }
 
+    private suspend fun loadPhotosFromDB(sol: Int, page: Int): PhotoResponse<List<PhotoItem>> {
+        return PhotoResponse.success(
+            "Loaded from DB (sol $sol, page $page)",
+            photoDB.getPhotos(sol, page)
+        )
+    }
 
-    fun photoExists(photoId: Int): Boolean = photos.value!!.find { it.id == photoId } != null
+    private suspend fun loadPhotosFromWeb(sol: Int, page: Int): PhotoResponse<List<PhotoItem>> {
+        val result = photoWeb.getPhotos(sol, page) ?: PhotoResponse.error(
+            "Empty Response",
+            emptyList()
+        )
+        addPhotos(result.data)
+        return result
+    }
 
-    fun addPhotos(photoList: List<PhotoItem>) {
-        if (photoList.isEmpty()) return
-        
-        val copy = photos.value!!.toMutableList()
-        copy.addAll(photoList.filter { !photoExists(it.id) })
-        photos.postValue(copy)
+    private fun photoExists(photoId: Int): Boolean =
+        photoItems.value!!.data.find { it.id == photoId } != null
+
+    private suspend fun addPhotos(photoList: List<PhotoItem>?) {
+        if (photoList.isNullOrEmpty()) return
+
+        photoDB.insertAll(photoList)
     }
 
 }
