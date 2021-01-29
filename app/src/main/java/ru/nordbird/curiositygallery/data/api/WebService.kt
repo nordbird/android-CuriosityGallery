@@ -8,8 +8,8 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import ru.nordbird.curiositygallery.data.model.PhotoItem
-import ru.nordbird.curiositygallery.data.model.PhotoList
+import ru.nordbird.curiositygallery.data.model.PhotoDB
+import ru.nordbird.curiositygallery.data.model.PhotoWebList
 import ru.nordbird.curiositygallery.utils.PhotoResponse
 import java.io.IOException
 
@@ -20,7 +20,7 @@ object WebService {
 
     private var client: OkHttpClient = OkHttpClient()
 
-    suspend fun getPhotos(sol: Int, page: Int): PhotoResponse<List<PhotoItem>>? {
+    suspend fun getPhotos(sol: Int, page: Int): PhotoResponse<List<PhotoDB>>? {
         val urlBuilder: HttpUrl.Builder = BASE_URL.toHttpUrlOrNull()!!.newBuilder()
         urlBuilder.addQueryParameter("sol", sol.toString())
         urlBuilder.addQueryParameter("page", page.toString())
@@ -41,11 +41,11 @@ object WebService {
                         val moshi = Moshi.Builder()
                             .addLast(KotlinJsonAdapterFactory())
                             .build()
-                        val adapter = moshi.adapter(PhotoList::class.java).nullSafe()
+                        val adapter = moshi.adapter(PhotoWebList::class.java).nullSafe()
 
                         try {
                             adapter.fromJson(response.body!!.string())?.let { list ->
-                                val photos = list.photos.map { it.toPhotoItem(page) }
+                                val photos = list.photos.map { it.toPhotoDB(page) }
                                 PhotoResponse.success(
                                     "Loaded from Web (sol $sol, page $page) ($counter)",
                                     photos

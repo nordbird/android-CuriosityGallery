@@ -2,7 +2,7 @@ package ru.nordbird.curiositygallery.data.model
 
 import com.squareup.moshi.Json
 
-data class Photo(
+data class PhotoWeb(
     @Json(name = "id")
     val id: Int = 0,
 
@@ -17,7 +17,7 @@ data class Photo(
 
 ) {
 
-    fun toPhotoItem(page: Int): PhotoItem {
-        return PhotoItem(id, imgSrc, earthDate, sol, page, false)
+    fun toPhotoDB(page: Int): PhotoDB {
+        return PhotoDB(id, imgSrc, earthDate, sol, page, true)
     }
 }

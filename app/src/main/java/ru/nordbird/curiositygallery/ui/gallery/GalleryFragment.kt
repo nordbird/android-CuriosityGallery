@@ -40,10 +40,10 @@ class GalleryFragment : Fragment() {
         galleryAdapter = GalleryAdapter {
             val photoId = it.id
 
-            viewModel.blockPhoto(photoId)
+            viewModel.hidePhoto(photoId)
             Snackbar.make(binding.rvGallery, "Photo ${it.id} is hidden", Snackbar.LENGTH_LONG)
                 .setAction("Cancel") {
-                    viewModel.unblockPhoto(photoId)
+                    viewModel.restorePhoto(photoId)
                 }.show()
             return@GalleryAdapter true
         }

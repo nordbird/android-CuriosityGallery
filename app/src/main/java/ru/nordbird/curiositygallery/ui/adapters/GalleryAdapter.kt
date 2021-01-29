@@ -9,7 +9,7 @@ import com.bumptech.glide.Glide
 import ru.nordbird.curiositygallery.data.model.PhotoItem
 import ru.nordbird.curiositygallery.databinding.ItemPhotoBinding
 
-class GalleryAdapter(val longClickListener: (PhotoItem) -> Boolean) :
+class GalleryAdapter(private val longClickListener: (PhotoItem) -> Boolean) :
     RecyclerView.Adapter<GalleryAdapter.PhotoItemViewHolder>() {
 
     var items: List<PhotoItem> = listOf()
